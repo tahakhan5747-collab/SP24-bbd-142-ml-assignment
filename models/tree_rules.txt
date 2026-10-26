@@ -1,0 +1,7 @@
+|--- petal_length <= 2.45
+|   |--- class: Iris-setosa
+|--- petal_length >  2.45
+|   |--- petal_width <= 1.65
+|   |   |--- class: Iris-versicolor
+|   |--- petal_width >  1.65
+|   |   |--- class: Iris-virginica

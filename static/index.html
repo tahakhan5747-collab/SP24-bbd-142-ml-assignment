@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simple ML Predictions</title>
+  <style>
+    body {font-family:Arial,sans-serif;background:#f3f6fa;color:#203047;margin:0;padding:30px 16px;}
+    main {max-width:850px;margin:auto;} h1 {margin-bottom:8px;}
+    .intro {color:#5b6879;line-height:1.6;} .cards {display:flex;gap:24px;margin-top:28px;}
+    section {background:white;padding:25px;border:1px solid #dce3ec;border-radius:12px;flex:1;}
+    h2 {font-size:22px;margin-top:0;} p {line-height:1.5;} label {display:block;margin-top:16px;}
+    input {width:100%;box-sizing:border-box;padding:10px;margin-top:7px;border:1px solid #a9b9cc;border-radius:5px;font:inherit;}
+    button {width:100%;padding:12px;margin-top:20px;background:#275dad;color:white;border:0;border-radius:5px;font:inherit;cursor:pointer;}
+    button:disabled {opacity:.6;} .result {background:#eef4ff;padding:15px;border-radius:6px;min-height:22px;}
+    .score,footer {font-size:13px;color:#5b6879;} footer {margin-top:26px;line-height:1.7;} a {color:#275dad;}
+    @media(max-width:600px){.cards{flex-direction:column;}}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Simple ML Predictions</h1>
+  <p class="intro">Two small models, two easy tasks. Both use recorded datasets downloaded from Kaggle.</p>
+  <div class="cards">
+    <section>
+      <h2>1. Predict a restaurant tip</h2>
+      <p>Linear regression uses the bill amount to estimate a tip in US dollars.</p>
+      <form id="regression">
+        <label for="bill">Total bill ($3–$51)</label>
+        <input id="bill" name="total_bill" type="number" min="3" max="51" step="any" value="20" required>
+        <button>Predict tip</button>
+      </form>
+      <p class="result" id="regression-result" role="status" aria-live="polite">Your tip estimate will appear here.</p>
+      <p class="score" id="regression-score">Loading R²…</p>
+    </section>
+    <section>
+      <h2>2. Identify an Iris flower</h2>
+      <p>A small decision tree uses two petal measurements to predict the species.</p>
+      <form id="classification">
+        <label for="length">Petal length (1–7 cm)</label>
+        <input id="length" name="petal_length" type="number" min="1" max="7" step="any" value="1.4" required>
+        <label for="width">Petal width (0.1–2.5 cm)</label>
+        <input id="width" name="petal_width" type="number" min="0.1" max="2.5" step="any" value="0.2" required>
+        <button>Predict species</button>
+      </form>
+      <p class="result" id="classification-result" role="status" aria-live="polite">Your species will appear here.</p>
+      <p class="score" id="classification-score">Loading accuracy…</p>
+    </section>
+  </div>
+  <footer>Educational estimates; tips vary between customers.<br>
+    Datasets: <a href="https://www.kaggle.com/datasets/aminizahra/tips-dataset">Waiter's Tips</a> ·
+    <a href="https://www.kaggle.com/datasets/uciml/iris">Iris Species</a> · <a href="/docs">API documentation</a>
+  </footer>
+</main>
+<script>
+// Connect each form to its matching backend endpoint.
+for (const task of ['regression', 'classification']) {
+  const form = document.getElementById(task);
+  form.addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const output = document.getElementById(task + '-result');
+    const button = form.querySelector('button');
+    const inputs = {};
+    for (const [name, value] of new FormData(form)) inputs[name] = Number(value);
+    button.disabled = true;
+    output.textContent = 'Predicting…';
+    try {
+      const response = await fetch('/predict/' + task, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(inputs)
+      });
+      if (!response.ok) throw new Error('Check your inputs and try again.');
+      const data = await response.json();
+      if (task === 'regression') output.textContent = 'Estimated tip: $' + data.prediction.toFixed(2);
+      else output.textContent = 'Species: ' + data.prediction;
+    } catch (error) { output.textContent = 'Request failed: ' + error.message; }
+    finally { button.disabled = false; }
+  });
+}
+async function loadScores() {
+  try {
+    const response = await fetch('/metrics');
+    if (!response.ok) throw new Error();
+    const scores = await response.json();
+    document.getElementById('regression-score').textContent = 'Test R²: ' + scores.regression_r2.toFixed(4);
+    document.getElementById('classification-score').textContent = 'Test accuracy: ' + (scores.classification_accuracy * 100).toFixed(2) + '%';
+  } catch {
+    document.getElementById('regression-score').textContent = 'Scores unavailable.';
+    document.getElementById('classification-score').textContent = 'Scores unavailable.';
+  }
+}
+loadScores();
+</script>
+</body>
+</html>

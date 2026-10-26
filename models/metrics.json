@@ -1,0 +1,10 @@
+{
+  "regression_r2": 0.5449381659234663,
+  "classification_accuracy": 0.9333333333333333,
+  "regression_train_rows": 195,
+  "regression_test_rows": 49,
+  "classification_train_rows": 120,
+  "classification_test_rows": 30,
+  "regression_intercept": 0.9252355585570546,
+  "regression_slope": 0.10696370685268666
+}
